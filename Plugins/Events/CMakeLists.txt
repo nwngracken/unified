@@ -7,5 +7,6 @@ add_plugin(Events
     "Events/ExamineEvents.cpp"
     "Events/FeatEvents.cpp"
     "Events/ItemEvents.cpp"
+    "Events/PartyEvents.cpp"
     "Events/StealthEvents.cpp"
     "Events/SpellEvents.cpp")
