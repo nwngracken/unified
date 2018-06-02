@@ -3,7 +3,7 @@
 #include "API/Functions.hpp"
 #include "API/Globals.hpp"
 #include "Events.hpp"
-#include "Helpers.hpp"
+#include "Utils.hpp"
 #include "ViewPtr.hpp"
 //#include "API/Vector.hpp"
 
@@ -41,8 +41,8 @@ int32_t PartyEvents::InviteMemberHook
 {
     // For RequestSharedHook
     //const bool before = type == Services::Hooks::CallType::BEFORE_ORIGINAL;
-    Events::PushEventData("TARGET_OBJECT_ID", Helpers::ObjectIDToString(oidTarget));
-    Events::PushEventData("SENDER_OBJECT_ID", Helpers::ObjectIDToString(oidSender));
+    Events::PushEventData("TARGET_OBJECT_ID", NWNXLib::Utils::ObjectIDToString(oidTarget));
+    Events::PushEventData("SENDER_OBJECT_ID", NWNXLib::Utils::ObjectIDToString(oidSender));
 
     // For RequestSharedHook
     //Events::SignalEvent(before ? "NWNX_ON_INVITE_MEMBER_BEFORE" : "NWNX_ON_INVITE_MEMBER_AFTER", thisPtr->m_nFactionId);
