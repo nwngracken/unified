@@ -1,4 +1,4 @@
-# Events Plugin Refernece
+# Events Plugin Reference
 
 ## Description
 
@@ -14,5 +14,6 @@ Provides an interface for plugins to create event-based systems, and exposes som
 | ENABLE_EXAMINE_EVENTS     | bool   | true          |
 | ENABLE_ITEM_EVENTS        | bool   | true          |
 | ENABLE_FEAT_EVENTS        | bool   | true          |
+| ENABLE_PARTY_EVENTS       | bool   | true          |
 | ENABLE_STEALTH_EVENTS     | bool   | true          |
 | ENABLE_SPELL_EVENTS       | bool   | true          |
