@@ -15,5 +15,6 @@ Provides an interface for plugins to create event-based systems, and exposes som
 | ENABLE_ITEM_EVENTS        | bool   | true          |
 | ENABLE_FEAT_EVENTS        | bool   | true          |
 | ENABLE_PARTY_EVENTS       | bool   | true          |
+| ENABLE_PICK_POCKET_EVENTS | bool   | true          |
 | ENABLE_STEALTH_EVENTS     | bool   | true          |
 | ENABLE_SPELL_EVENTS       | bool   | true          |

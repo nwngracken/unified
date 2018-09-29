@@ -11,6 +11,8 @@
 #include "Events/FeatEvents.hpp"
 #include "Events/ItemEvents.hpp"
 #include "Events/PartyEvents.hpp"
+#include "Events/PartyEvents.hpp"
+#include "Events/PickPocketEvents.hpp"
 #include "Events/StealthEvents.hpp"
 #include "Events/SpellEvents.hpp"
 #include "Services/Config/Config.hpp"
@@ -103,6 +105,11 @@ Events::Events(const Plugin::CreateParams& params)
     if (GetServices()->m_config->Get<bool>("ENABLE_PARTY_EVENTS", true))
     {
         m_partyEvents = std::make_unique<PartyEvents>(GetServices()->m_hooks);
+    }
+
+    if (GetServices()->m_config->Get<bool>("ENABLE_PICKPOCKET_EVENTS", true))
+    {
+        m_partyEvents = std::make_unique<PickPocketEvents>(GetServices()->m_hooks);
     }
 
     if (GetServices()->m_config->Get<bool>("ENABLE_STEALTH_EVENTS", true))
