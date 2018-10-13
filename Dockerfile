@@ -7,6 +7,7 @@ RUN Scripts/buildnwnx.sh -j $(nproc)
 FROM beamdog/nwserver
 RUN mkdir /nwn/nwnx
 COPY --from=builder /nwnx/home/Binaries/* /nwn/nwnx/
+COPY Docker/efu/run-nwnx-server.sh /nwn/
 # Install plugin run dependencies
 RUN runDeps="hunspell \
     libmariadbclient18 \
@@ -16,7 +17,12 @@ RUN runDeps="hunspell \
     libssl1.1" \
     && apt-get update \
     && apt-get -y install --no-install-recommends $runDeps \
-    && rm -r /var/cache/apt /var/lib/apt/lists
+    && rm -r /var/cache/apt /var/lib/apt/lists \
+    && chmod +x /nwn/run-nwnx-server.sh \
+    && /usr/sbin/groupadd -g 1004                      nwn \
+    && /usr/sbin/useradd  -g 1004 -u 1004 -d /nwn/home nwn \
+    && /usr/sbin/groupadd -g 1006                      efudm
+
 # Configure nwserver to run with nwnx
 ENV NWNX_CORE_LOAD_PATH=/nwn/nwnx/
 ENV NWN_LD_PRELOAD="/nwn/nwnx/NWNX_Core.so"
@@ -53,3 +59,5 @@ ENV NWNX_ADMINISTRATION_SKIP=y \
     NWNX_UTIL_SKIP=y \
     NWNX_WEAPON_SKIP=y \
     NWNX_WEBHOOK_SKIP=y
+
+ENTRYPOINT ["/nwn/run-nwnx-server.sh"]
