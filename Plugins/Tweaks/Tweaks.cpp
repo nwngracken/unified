@@ -5,8 +5,13 @@
 #include "Tweaks/CompareVarsForMerge.hpp"
 #include "Tweaks/ParryAllAttacks.hpp"
 #include "Tweaks/SneakAttackCritImmunity.hpp"
+#include "Tweaks/PreserveDepletedItems.hpp"
 
 #include "Services/Config/Config.hpp"
+
+#include "API/Version.hpp"
+#include "Platform/Assembly.hpp"
+#include "Services/Patching/Patching.hpp"
 
 using namespace NWNXLib;
 
@@ -71,6 +76,35 @@ Tweaks::Tweaks(const Plugin::CreateParams& params)
     {
         LOG_INFO("Sneak attacks will now be possible on creatures with immunity to critical hits");
         m_SneakAttackCritImmunity = std::make_unique<SneakAttackCritImmunity>(GetServices()->m_hooks.get());
+    }
+
+    if (GetServices()->m_config->Get<bool>("PRESERVE_DEPLETED_ITEMS", false))
+    {
+        LOG_INFO("Items will no longer be destroyed when they run out of charges");
+        m_PreserveDepletedItems = std::make_unique<PreserveDepletedItems>(GetServices()->m_hooks.get());
+    }
+
+    if (GetServices()->m_config->Get<bool>("DISABLE_SHADOWS", false))
+    {
+        LOG_INFO("Sun and moon shadows will be disabled");
+
+        // Temporary workaround for Intel crash in complex areas - disable when a proper fix is implemented.
+        // PackAreaIntoMessage
+
+        // m_bMoonShadows
+        GetServices()->m_patching->PatchWithInstructions(0x0012EB0C,
+            Platform::Assembly::PushImmInstruction(0),
+            Platform::Assembly::NoopInstruction(),
+            Platform::Assembly::NoopInstruction(),
+            Platform::Assembly::NoopInstruction(),
+            Platform::Assembly::NoopInstruction()
+        ); NWNX_EXPECT_VERSION(8186);
+
+        // m_bSunShadows
+        GetServices()->m_patching->PatchWithInstructions(0x0012EB94,
+            Platform::Assembly::PushImmInstruction(0),
+            Platform::Assembly::NoopInstruction()
+        ); NWNX_EXPECT_VERSION(8186);
     }
 }
 
