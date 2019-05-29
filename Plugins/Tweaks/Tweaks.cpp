@@ -2,10 +2,13 @@
 #include "Tweaks/HideClassesOnCharList.hpp"
 #include "Tweaks/PlayerDyingHitPointLimit.hpp"
 #include "Tweaks/DisablePause.hpp"
+#include "Tweaks/DisableQuicksave.hpp"
 #include "Tweaks/CompareVarsForMerge.hpp"
 #include "Tweaks/ParryAllAttacks.hpp"
 #include "Tweaks/SneakAttackCritImmunity.hpp"
 #include "Tweaks/PreserveDepletedItems.hpp"
+#include "Tweaks/HideDMsOnCharList.hpp"
+#include "Tweaks/DisableMonkAbilitiesWhenPolymorphed.hpp"
 
 #include "Services/Config/Config.hpp"
 
@@ -60,6 +63,12 @@ Tweaks::Tweaks(const Plugin::CreateParams& params)
         m_DisablePause = std::make_unique<DisablePause>(GetServices()->m_hooks.get());
     }
 
+    if (GetServices()->m_config->Get<bool>("DISABLE_QUICKSAVE", false))
+    {
+        LOG_INFO("Disabling the quicksave option on the server");
+        m_DisableQuicksave = std::make_unique<DisableQuicksave>(GetServices()->m_hooks.get());
+    }
+
     if (GetServices()->m_config->Get<bool>("COMPARE_VARIABLES_WHEN_MERGING", false))
     {
         LOG_INFO("Will compare local variables when merging item stacks");
@@ -105,6 +114,18 @@ Tweaks::Tweaks(const Plugin::CreateParams& params)
             Platform::Assembly::PushImmInstruction(0),
             Platform::Assembly::NoopInstruction()
         ); NWNX_EXPECT_VERSION(8186);
+    }
+
+    if (GetServices()->m_config->Get<bool>("HIDE_DMS_ON_CHAR_LIST", false))
+    {
+        LOG_INFO("DMs will not be visible on character list");
+        m_HideDMsOnCharList = std::make_unique<HideDMsOnCharList>(GetServices()->m_hooks.get());
+    }
+
+    if (GetServices()->m_config->Get<bool>("DISABLE_MONK_ABILITIES_WHEN_POLYMORPHED", false))
+    {
+        LOG_INFO("Monk abilities (ac, speed, attacks) will be disabled during polymorph");
+        m_DisableMonkAbilitiesWhenPolymorphed = std::make_unique<DisableMonkAbilitiesWhenPolymorphed>(GetServices()->m_hooks.get());
     }
 }
 

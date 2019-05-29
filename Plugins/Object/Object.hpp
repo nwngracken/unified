@@ -22,14 +22,20 @@ private:
     ArgumentStack SetPosition          (ArgumentStack&& args);
     ArgumentStack SetCurrentHitPoints  (ArgumentStack&& args);
     ArgumentStack SetMaxHitPoints      (ArgumentStack&& args);
-    ArgumentStack GetPortrait          (ArgumentStack&& args);
-    ArgumentStack SetPortrait          (ArgumentStack&& args);
     ArgumentStack Serialize            (ArgumentStack&& args);
     ArgumentStack Deserialize          (ArgumentStack&& args);
     ArgumentStack GetDialogResref      (ArgumentStack&& args);
     ArgumentStack SetDialogResref      (ArgumentStack&& args);
     ArgumentStack SetAppearance        (ArgumentStack&& args);
     ArgumentStack GetAppearance        (ArgumentStack&& args);
+    ArgumentStack GetHasVisualEffect   (ArgumentStack&& args);
+    ArgumentStack CheckFit             (ArgumentStack&& args);
+    ArgumentStack GetDamageImmunity    (ArgumentStack&& args);
+    ArgumentStack AddToArea            (ArgumentStack&& args);
+    ArgumentStack GetPlaceableIsStatic (ArgumentStack&& args);
+    ArgumentStack SetPlaceableIsStatic (ArgumentStack&& args);
+    ArgumentStack GetAutoRemoveKey     (ArgumentStack&& args);
+    ArgumentStack SetAutoRemoveKey     (ArgumentStack&& args);
 
     NWNXLib::API::CNWSObject *object(ArgumentStack& args);
 

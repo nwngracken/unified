@@ -101,14 +101,15 @@ void NWNX_Object_SetCurrentHitPoints(object obj, int hp);
 void NWNX_Object_SetMaxHitPoints(object obj, int hp);
 
 // Get the name of the portrait object is using.
+// DEPRECATED - Use GetPortraitResRef() built-in function instead
 string NWNX_Object_GetPortrait(object obj);
 
 // Set the portrait object is using. The portrait string must be no more
 // than 15 characters long.
+// DEPRECATED - Use SetPortraitResRef() built-in function instead
 void NWNX_Object_SetPortrait(object obj, string portrait);
 
 // Serialize the full object (including locals, inventory, etc) to base64 string
-// Only works on Creatures and Items currently.
 string NWNX_Object_Serialize(object obj);
 
 // Deserialize the object. The object will be created outside of the world and
@@ -127,6 +128,33 @@ void NWNX_Object_SetAppearance(object obj, int app);
 
 // Get obj's appearance
 int NWNX_Object_GetAppearance(object obj);
+
+// Return TRUE if obj has visual effect nVFX applied to it
+int NWNX_Object_GetHasVisualEffect(object obj, int nVFX);
+
+// Return TRUE if an item of baseitem type can fit in object's inventory
+int NWNX_Object_CheckFit(object obj, int baseitem);
+
+// Return damage immunity (in percent) against given damage type
+// Use DAMAGE_TYPE_* constants for damageType
+int NWNX_Object_GetDamageImmunity(object obj, int damageType);
+
+// Add or move obj to area at pos
+void NWNX_Object_AddToArea(object obj, object area, vector pos);
+
+// Get placeable's static setting
+int NWNX_Object_GetPlaceableIsStatic(object obj);
+
+// Set placeable as static or not. Will not update for PCs until they
+// re-enter the area.
+void NWNX_Object_SetPlaceableIsStatic(object obj, int isStatic);
+
+// Gets if a door/placeable auto-removes the key after use.
+// Returns -1 on error.
+int NWNX_Object_GetAutoRemoveKey(object obj);
+
+// Sets if a door/placeable auto-removes the key after use.
+void NWNX_Object_SetAutoRemoveKey(object obj, int bRemoveKey);
 
 
 const string NWNX_Object = "NWNX_Object";
@@ -242,26 +270,20 @@ void NWNX_Object_SetMaxHitPoints(object creature, int hp)
 
     NWNX_CallFunction(NWNX_Object, sFunc);
 }
+
 string NWNX_Object_GetPortrait(object creature)
 {
-    string sFunc = "GetPortrait";
+    WriteTimestampedLogEntry("NWNX_Object: GetPortrait() is deprecated. Use native GetPortraitResRef() instead");
 
-    NWNX_PushArgumentObject(NWNX_Object, sFunc, creature);
-
-    NWNX_CallFunction(NWNX_Object, sFunc);
-    return NWNX_GetReturnValueString(NWNX_Object, sFunc);
+    return GetPortraitResRef(creature);
 }
 
 void NWNX_Object_SetPortrait(object creature, string portrait)
 {
-    string sFunc = "SetPortrait";
+    WriteTimestampedLogEntry("NWNX_Object: SetPortrait() is deprecated. Use native SetPortraitResRef() instead");
 
-    NWNX_PushArgumentString(NWNX_Object, sFunc, portrait);
-    NWNX_PushArgumentObject(NWNX_Object, sFunc, creature);
-
-    NWNX_CallFunction(NWNX_Object, sFunc);
+    SetPortraitResRef(creature, portrait);
 }
-
 
 string NWNX_Object_Serialize(object obj)
 {
@@ -282,7 +304,6 @@ object NWNX_Object_Deserialize(string serialized)
     NWNX_CallFunction(NWNX_Object, sFunc);
     return NWNX_GetReturnValueObject(NWNX_Object, sFunc);
 }
-
 
 string NWNX_Object_GetDialogResref(object obj)
 {
@@ -322,4 +343,92 @@ int NWNX_Object_GetAppearance(object obj)
 
     NWNX_CallFunction(NWNX_Object, sFunc);
     return NWNX_GetReturnValueInt(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_GetHasVisualEffect(object obj, int nVFX)
+{
+    string sFunc = "GetHasVisualEffect";
+
+    NWNX_PushArgumentInt(NWNX_Object, sFunc, nVFX);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
+
+    return NWNX_GetReturnValueInt(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_CheckFit(object obj, int baseitem)
+{
+    string sFunc = "CheckFit";
+
+    NWNX_PushArgumentInt(NWNX_Object, sFunc, baseitem);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
+
+    return NWNX_GetReturnValueInt(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_GetDamageImmunity(object obj, int damageType)
+{
+    string sFunc = "GetDamageImmunity";
+
+    NWNX_PushArgumentInt(NWNX_Object, sFunc, damageType);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
+
+    return NWNX_GetReturnValueInt(NWNX_Object, sFunc);
+}
+
+void NWNX_Object_AddToArea(object obj, object area, vector pos)
+{
+    string sFunc = "AddToArea";
+
+    NWNX_PushArgumentFloat(NWNX_Object, sFunc, pos.z);
+    NWNX_PushArgumentFloat(NWNX_Object, sFunc, pos.y);
+    NWNX_PushArgumentFloat(NWNX_Object, sFunc, pos.x);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, area);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+    NWNX_CallFunction(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_GetPlaceableIsStatic(object obj)
+{
+    string sFunc = "GetPlaceableIsStatic";
+
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
+    return NWNX_GetReturnValueInt(NWNX_Object, sFunc);
+}
+
+void NWNX_Object_SetPlaceableIsStatic(object obj, int isStatic)
+{
+    string sFunc = "SetPlaceableIsStatic";
+
+    NWNX_PushArgumentInt(NWNX_Object, sFunc, isStatic);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
+}
+
+int NWNX_Object_GetAutoRemoveKey(object obj)
+{
+    string sFunc = "GetAutoRemoveKey";
+
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+    NWNX_CallFunction(NWNX_Object, sFunc);
+
+    return NWNX_GetReturnValueInt(NWNX_Object, sFunc);
+}
+
+void NWNX_Object_SetAutoRemoveKey(object obj, int bRemoveKey)
+{
+    string sFunc = "SetAutoRemoveKey";
+
+    NWNX_PushArgumentInt(NWNX_Object, sFunc, bRemoveKey);
+    NWNX_PushArgumentObject(NWNX_Object, sFunc, obj);
+
+    NWNX_CallFunction(NWNX_Object, sFunc);
 }
