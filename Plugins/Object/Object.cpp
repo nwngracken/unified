@@ -5,7 +5,7 @@
 #include "API/CNWSObject.hpp"
 #include "API/CNWSScriptVar.hpp"
 #include "API/CNWSScriptVarTable.hpp"
-#include "API/CExoArrayListTemplatedCNWSScriptVar.hpp"
+#include "API/CExoArrayList.hpp"
 #include "API/CNWSCreature.hpp"
 #include "API/CNWSCreatureStats.hpp"
 #include "API/CNWSPlaceable.hpp"
@@ -20,6 +20,7 @@
 #include "API/CNWBaseItem.hpp"
 #include "API/CNWBaseItemArray.hpp"
 #include "API/CItemRepository.hpp"
+#include "API/CExoFile.hpp"
 #include "API/Constants.hpp"
 #include "API/Globals.hpp"
 #include "API/CLoopingVisualEffect.hpp"
@@ -27,6 +28,8 @@
 #include "ViewPtr.hpp"
 #include "Serialize.hpp"
 #include "Utils.hpp"
+
+#include <cstring>
 
 using namespace NWNXLib;
 using namespace NWNXLib::API;
@@ -59,7 +62,8 @@ Object::Object(const Plugin::CreateParams& params)
     : Plugin(params)
 {
 #define REGISTER(func) \
-    GetServices()->m_events->RegisterEvent(#func, std::bind(&Object::func, this, std::placeholders::_1))
+    GetServices()->m_events->RegisterEvent(#func, \
+        [this](ArgumentStack&& args){ return func(std::move(args)); })
 
     REGISTER(GetLocalVariableCount);
     REGISTER(GetLocalVariable);
@@ -81,6 +85,11 @@ Object::Object(const Plugin::CreateParams& params)
     REGISTER(SetPlaceableIsStatic);
     REGISTER(GetAutoRemoveKey);
     REGISTER(SetAutoRemoveKey);
+    REGISTER(GetTriggerGeometry);
+    REGISTER(SetTriggerGeometry);
+    REGISTER(RemoveIconEffect);
+    REGISTER(AddIconEffect);
+    REGISTER(Export);
 
 #undef REGISTER
 }
@@ -487,6 +496,219 @@ ArgumentStack Object::SetAutoRemoveKey(ArgumentStack&& args)
 
             default:
                 LOG_WARNING("NWNX_Object_SetAutoRemoveKey() called on non door/placeable object.");
+                break;
+        }
+    }
+
+    return stack;
+}
+
+ArgumentStack Object::GetTriggerGeometry(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+    std::string retVal;
+
+    if (auto *pObject = object(args))
+    {
+        if (auto *pTrigger = Utils::AsNWSTrigger(pObject))
+        {
+            retVal.reserve(32 * pTrigger->m_nVertices);
+
+            for(int i = 0; i < pTrigger->m_nVertices; i++)
+            {
+                retVal += "{" + std::to_string(pTrigger->m_pvVertices[i].x) + ", " +
+                                std::to_string(pTrigger->m_pvVertices[i].y) + ", " +
+                                std::to_string(pTrigger->m_pvVertices[i].z) + "}";
+            }
+        }
+        else
+        {
+            LOG_WARNING("NWNX_Object_GetTriggerGeometry() called on non trigger object.");
+        }
+    }
+
+    Services::Events::InsertArgument(stack, retVal);
+
+    return stack;
+}
+
+ArgumentStack Object::SetTriggerGeometry(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+
+    if (auto *pObject = object(args))
+    {
+        const auto sGeometry = Services::Events::ExtractArgument<std::string>(args);
+
+        if (auto *pTrigger = Utils::AsNWSTrigger(pObject))
+        {
+            auto str = sGeometry.c_str();
+            std::vector<Vector> vecVerts;
+            Vector vec = {};
+
+            do {
+                int cnt = std::sscanf(str, "{%f,%f,%f", &vec.x, &vec.y, &vec.z);
+
+                if (cnt != 2 && cnt != 3)
+                {
+                    LOG_NOTICE("NWNX_Object_SetTriggerGeometry() invalid geometry string at: %s", str);
+                    break;
+                }
+
+                if (cnt == 2)
+                    vec.z = pTrigger->GetArea()->ComputeHeight(vec);
+
+                vecVerts.push_back(vec);
+            } while ((str = std::strstr(str + 1, "{")));
+
+            if (vecVerts.size() > 2)
+            {
+                CNWSArea *pArea = pTrigger->GetArea();
+                pTrigger->RemoveFromArea();
+
+                if (pTrigger->m_pvVertices)
+                    delete[] pTrigger->m_pvVertices;
+                if (pTrigger->m_pnOutlineVertices)
+                    delete[] pTrigger->m_pnOutlineVertices;
+
+                pTrigger->m_nVertices = vecVerts.size();
+                pTrigger->m_nOutlineVertices = vecVerts.size();
+
+                pTrigger->m_pvVertices = new Vector[pTrigger->m_nVertices];
+                pTrigger->m_pnOutlineVertices = new int32_t[pTrigger->m_nVertices];
+
+                for(int i = 0; i < pTrigger->m_nVertices; i++)
+                {
+                    pTrigger->m_pvVertices[i] = vecVerts[i];
+                    pTrigger->m_pnOutlineVertices[i] = i;
+                }
+
+                Utils::AddToArea(pTrigger, pArea, pTrigger->m_pvVertices[0].x, pTrigger->m_pvVertices[0].y, pTrigger->m_pvVertices[0].z);
+            }
+            else
+            {
+                LOG_WARNING("NWNX_Object_SetTriggerGeometry() called with less than 3 vertices.");
+            }
+        }
+        else
+        {
+            LOG_WARNING("NWNX_Object_SetTriggerGeometry() called on non trigger object.");
+        }
+    }
+
+    return stack;
+}
+
+ArgumentStack Object::RemoveIconEffect(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+
+    if (auto *pObject = object(args))
+    {
+        const auto nIcon = Services::Events::ExtractArgument<int32_t>(args);
+
+        for (int i = 0; i < pObject->m_appliedEffects.num; i++)
+        {
+            auto *eff = pObject->m_appliedEffects.element[i];
+
+            if (eff->m_sCustomTag == "NWNX_Object_IconEffect" && eff->m_nParamInteger[0] == nIcon)
+            {
+                pObject->RemoveEffect(eff);
+                break;
+            }
+        }
+    }
+
+    return stack;
+}
+
+ArgumentStack Object::AddIconEffect(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+
+    if (auto *pObject = object(args))
+    {
+        const auto nIcon = Services::Events::ExtractArgument<int32_t>(args);
+        ASSERT_OR_THROW(nIcon > 0);
+        const auto fDuration = Services::Events::ExtractArgument<float>(args);
+
+        for (int i = 0; i < pObject->m_appliedEffects.num; i++)
+        {
+            auto *eff = pObject->m_appliedEffects.element[i];
+
+            if (eff->m_sCustomTag == "NWNX_Object_IconEffect" && eff->m_nParamInteger[0] == nIcon)
+            {
+                pObject->RemoveEffect(eff);
+                break;
+            }
+        }
+
+        auto *effIcon = new CGameEffect(true);
+        effIcon->m_oidCreator = 0;
+        effIcon->m_nType      = Constants::EffectTrueType::Icon;
+        effIcon->m_nSubType   = Constants::EffectSubType::Supernatural;
+        effIcon->m_bShowIcon  = true;
+        effIcon->m_bExpose    = true;
+        effIcon->m_sCustomTag = "NWNX_Object_IconEffect";
+
+        effIcon->SetNumIntegers(1);
+        effIcon->m_nParamInteger[0] = nIcon;
+
+        if (fDuration > 0.0)
+        {
+            effIcon->m_nSubType |= Constants::EffectDurationType::Temporary;
+            effIcon->m_fDuration = fDuration;
+        }
+        else
+        {
+            effIcon->m_nSubType |= Constants::EffectDurationType::Permanent;
+        }
+
+        pObject->ApplyEffect(effIcon, false, true);
+    }
+
+    return stack;
+}
+
+ArgumentStack Object::Export(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+
+    const auto fileName = Services::Events::ExtractArgument<std::string>(args);
+      ASSERT_OR_THROW(!fileName.empty());
+      ASSERT_OR_THROW(fileName.size() <= 16);
+    const auto oidObject = Services::Events::ExtractArgument<Types::ObjectID >(args);
+      ASSERT_OR_THROW(oidObject != Constants::OBJECT_INVALID);
+
+    if (auto *pGameObject = Utils::GetGameObject(oidObject))
+    {
+        auto ExportObject = [&](RESTYPE resType) -> void
+        {
+            std::vector<uint8_t> serialized = SerializeGameObject(pGameObject, true);
+
+            if (!serialized.empty())
+            {
+                auto file = CExoFile(("NWNX:" + fileName).c_str(), resType, "wb");
+
+                if (file.FileOpened())
+                {
+                    file.Write(serialized.data(), serialized.size(), 1);
+                    file.Flush();
+                }
+            }
+        };
+
+        switch (pGameObject->m_nObjectType)
+        {
+            case Constants::ObjectType::Creature:   ExportObject(Constants::ResRefType::UTC); break;
+            case Constants::ObjectType::Item:       ExportObject(Constants::ResRefType::UTI); break;
+            case Constants::ObjectType::Placeable:  ExportObject(Constants::ResRefType::UTP); break;
+            case Constants::ObjectType::Waypoint:   ExportObject(Constants::ResRefType::UTW); break;
+            case Constants::ObjectType::Store:      ExportObject(Constants::ResRefType::UTS); break;
+            case Constants::ObjectType::Door:       ExportObject(Constants::ResRefType::UTD); break;
+            case Constants::ObjectType::Trigger:    ExportObject(Constants::ResRefType::UTT); break;
+            default:
+                LOG_ERROR("Invalid object type for ExportObject");
                 break;
         }
     }

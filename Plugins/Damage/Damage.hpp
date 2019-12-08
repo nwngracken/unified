@@ -20,6 +20,7 @@ struct AttackDataStr
     uint8_t  nAttackResult;
     uint8_t  nAttackType;
     uint8_t  nSneakAttack;
+    uint8_t  bRanged;
 };
 
 namespace Damage {
@@ -39,12 +40,12 @@ private:
     ArgumentStack DealDamage(ArgumentStack&& args);
 
     NWNXLib::Hooking::FunctionHook* m_OnApplyDamageHook;
-    NWNXLib::Hooking::FunctionHook* m_OnCombatAttackHook;
 
-    static int32_t OnApplyDamage(NWNXLib::API::CNWSEffectListHandler *pThis, NWNXLib::API::CNWSObject *pObject, NWNXLib::API::CGameEffect *pEffect, bool bLoadingGame);
-    static void OnCombatAttack(NWNXLib::API::CNWSCombatRound *pThis, uint8_t attackNumber);
+    static int32_t OnApplyDamage(CNWSEffectListHandler *pThis, CNWSObject *pObject, CGameEffect *pEffect, bool bLoadingGame);
+    static void OnSignalDamage(NWNXLib::Services::Hooks::CallType type, CNWSCreature *pThis, CNWSObject *pTarget, uint32_t nAttacks);
+    static void OnCombatAttack(CNWSCreature *pThis, CNWSObject *pTarget, std::string script, uint8_t attackNumber);
 
-    static std::string GetEventScript(NWNXLib::API::CNWSObject *pObject, const std::string &event);
+    static std::string GetEventScript(CNWSObject *pObject, const std::string &event);
 
     std::unordered_map<std::string,std::string> m_EventScripts;
 

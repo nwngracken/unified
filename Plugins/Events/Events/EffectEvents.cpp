@@ -16,10 +16,10 @@ using namespace NWNXLib::API::Constants;
 EffectEvents::EffectEvents(ViewPtr<Services::HooksProxy> hooker)
 {
     Events::InitOnFirstSubscribe("NWNX_ON_EFFECT_APPLIED_.*", [hooker]() {
-       hooker->RequestSharedHook<NWNXLib::API::Functions::CNWSEffectListHandler__OnEffectApplied, int32_t>(&OnEffectAppliedHook);
+       hooker->RequestSharedHook<NWNXLib::API::Functions::_ZN21CNWSEffectListHandler15OnEffectAppliedEP10CNWSObjectP11CGameEffecti, int32_t>(&OnEffectAppliedHook);
     });
     Events::InitOnFirstSubscribe("NWNX_ON_EFFECT_REMOVED_.*", [hooker]() {
-        hooker->RequestSharedHook<NWNXLib::API::Functions::CNWSEffectListHandler__OnEffectRemoved, int32_t>(&OnEffectRemovedHook);
+        hooker->RequestSharedHook<NWNXLib::API::Functions::_ZN21CNWSEffectListHandler15OnEffectRemovedEP10CNWSObjectP11CGameEffect, int32_t>(&OnEffectRemovedHook);
     });
 }
 
@@ -29,9 +29,7 @@ void EffectEvents::HandleEffectHook(const std::string& event, Services::Hooks::C
 
     int32_t effectDurationType = pEffect->m_nSubType & EffectDurationType::MASK;
 
-    if (!pEffect->m_bExpose ||
-        effectDurationType == EffectDurationType::Instant ||
-        effectDurationType > EffectDurationType::Permanent)
+    if (effectDurationType != EffectDurationType::Temporary && effectDurationType != EffectDurationType::Permanent)
         return;
 
     switch (pEffect->m_nType)
@@ -40,6 +38,7 @@ void EffectEvents::HandleEffectHook(const std::string& event, Services::Hooks::C
         case EffectTrueType::VisualEffect:
         case EffectTrueType::Link:
         case EffectTrueType::ItemProperty:
+        case EffectTrueType::Beam:
             return;
 
         default:

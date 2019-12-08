@@ -2,8 +2,10 @@
 
 #include "Plugin.hpp"
 #include "Services/Events/Events.hpp"
-#include "API/Types.hpp"
-#include "API/CNWSPlayer.hpp"
+#include "Services/Hooks/Hooks.hpp"
+#include "API/ObjectVisualTransformData.hpp"
+#include <map>
+#include <set>
 
 using ArgumentStack = NWNXLib::Services::Events::ArgumentStack;
 
@@ -38,9 +40,18 @@ private:
     ArgumentStack GetAreaExplorationState           (ArgumentStack&& args);
     ArgumentStack SetAreaExplorationState           (ArgumentStack&& args);
     ArgumentStack SetRestAnimation                  (ArgumentStack&& args);
+    ArgumentStack SetObjectVisualTransformOverride  (ArgumentStack&& args);
+    ArgumentStack ApplyLoopingVisualEffectToObject  (ArgumentStack&& args);
+    ArgumentStack SetPlaceableNameOverride          (ArgumentStack&& args);
+    ArgumentStack GetQuestCompleted                 (ArgumentStack&& args);
+    ArgumentStack SetPersistentLocation             (ArgumentStack&& args);
+    ArgumentStack UpdateItemName                    (ArgumentStack&& args);
+    ArgumentStack PossessCreature                   (ArgumentStack&& args);
+    ArgumentStack GetPlatformId                     (ArgumentStack&& args);
 
-    NWNXLib::API::CNWSPlayer *player(ArgumentStack& args);
+    CNWSPlayer *player(ArgumentStack& args);
 
+    std::unordered_map<std::string, std::pair<NWNXLib::API::Types::ObjectID, bool>> m_PersistentLocationWP;
 };
 
 }

@@ -7,6 +7,7 @@
 #include "API/CNWSTransition.hpp"
 #include "API/CNWSTrigger.hpp"
 #include "API/CNWSTile.hpp"
+#include "API/CNWSAmbientSound.hpp"
 #include "API/Constants.hpp"
 #include "API/Globals.hpp"
 #include "Services/Events/Events.hpp"
@@ -44,7 +45,8 @@ Area::Area(const Plugin::CreateParams& params)
     : Plugin(params)
 {
 #define REGISTER(func) \
-    GetServices()->m_events->RegisterEvent(#func, std::bind(&Area::func, this, std::placeholders::_1))
+    GetServices()->m_events->RegisterEvent(#func, \
+        [this](ArgumentStack&& args){ return func(std::move(args)); })
 
     REGISTER(GetNumberOfPlayersInArea);
     REGISTER(GetLastEntered);
@@ -72,6 +74,8 @@ Area::Area(const Plugin::CreateParams& params)
     REGISTER(CreateTransition);
     REGISTER(GetTileAnimationLoop);
     REGISTER(SetTileAnimationLoop);
+    REGISTER(TestDirectLine);
+    REGISTER(GetMusicIsPlaying);
 
 #undef REGISTER
 }
@@ -718,6 +722,50 @@ ArgumentStack Area::SetTileAnimationLoop(ArgumentStack&& args)
             LOG_ERROR("NWNX_Area_SetTileAnimationLoop: invalid tile specified");
         }
     }
+
+    return stack;
+}
+
+ArgumentStack Area::TestDirectLine(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+
+    if (auto *pArea = area(args))
+    {
+        const auto fStartX = Services::Events::ExtractArgument<float>(args);
+          ASSERT_OR_THROW(fStartX >= 0.0f);
+        const auto fStartY = Services::Events::ExtractArgument<float>(args);
+          ASSERT_OR_THROW(fStartY >= 0.0f);
+        const auto fEndX = Services::Events::ExtractArgument<float>(args);
+          ASSERT_OR_THROW(fEndX >= 0.0f);
+        const auto fEndY = Services::Events::ExtractArgument<float>(args);
+          ASSERT_OR_THROW(fEndY >= 0.0f);
+        const auto fPerSpace = Services::Events::ExtractArgument<float>(args);
+          ASSERT_OR_THROW(fPerSpace >= 0.0f);
+        const auto fHeight = Services::Events::ExtractArgument<float>(args);
+            ASSERT_OR_THROW(fHeight >= 0.0f);
+        const auto bIgnoreDoors = Services::Events::ExtractArgument<int32_t>(args);
+
+        int32_t bReturn = pArea->TestDirectLine(fStartX, fStartY, fEndX, fEndY, fPerSpace, fHeight, bIgnoreDoors);
+        Services::Events::InsertArgument(stack, bReturn);
+    }
+
+    return stack;
+}
+
+ArgumentStack Area::GetMusicIsPlaying(ArgumentStack&& args)
+{
+    ArgumentStack stack;
+    int32_t retVal = false;
+
+    if (auto *pArea = area(args))
+    {
+        const auto bBattleMusic = Services::Events::ExtractArgument<int32_t>(args) != 0;
+
+        retVal = bBattleMusic ? pArea->m_pAmbientSound->m_bBattlePlaying : pArea->m_pAmbientSound->m_bMusicPlaying;
+    }
+
+    Services::Events::InsertArgument(stack, retVal);
 
     return stack;
 }
