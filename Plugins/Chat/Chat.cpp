@@ -19,11 +19,10 @@
 #include "Services/Config/Config.hpp"
 #include "Services/Hooks/Hooks.hpp"
 #include "Services/PerObjectStorage/PerObjectStorage.hpp"
-#include "ViewPtr.hpp"
 
 using namespace NWNXLib;
 
-static ViewPtr<Chat::Chat> g_plugin;
+static Chat::Chat* g_plugin;
 
 NWNX_PLUGIN_ENTRY Plugin::Info* PluginInfo()
 {
@@ -334,7 +333,7 @@ Events::ArgumentStack Chat::SetChatHearingDistance(Events::ArgumentStack&& args)
         {
             auto *pPOS = g_plugin->GetServices()->m_perObjectStorage.get();
             m_customHearingDistances = true;
-            pPOS->Set(playerOid, "HEARING_DISTANCE:" + std::to_string(channel), distance);
+            pPOS->Set(playerOid, "HEARING_DISTANCE:" + std::to_string(channel), distance, true);
         }
         return stack;
     }
